@@ -1,22 +1,20 @@
 package com.project.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@NoArgsConstructor
 @Entity
 @Data
+@Getter
+@Setter
 public class MenuItem {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    String name;
-    double price;
+    private String name;
+    private double price;
+    private int preparationTime;
+
     @ManyToOne
-    @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 }
