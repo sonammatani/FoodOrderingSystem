@@ -1,10 +1,10 @@
-package com.project.foodmania;
+package com.project.app;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class FoodmaniaApplicationTests {
+class FoodManiaApplicationTests {
 
 	@Test
 	void contextLoads() {
