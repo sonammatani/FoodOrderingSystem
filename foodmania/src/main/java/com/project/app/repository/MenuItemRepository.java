@@ -1,5 +1,5 @@
-package com.project.repository;
-import com.project.model.MenuItem;
+package com.project.app.repository;
+import com.project.app.model.MenuItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -10,4 +10,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
 
     @Query("SELECT DISTINCT m.name FROM MenuItem m")
     List<String> findAllUniqueMenuItems();
+
+    MenuItem findByRestaurantIdAndName(Long restaurantId, String name);
+
 }
