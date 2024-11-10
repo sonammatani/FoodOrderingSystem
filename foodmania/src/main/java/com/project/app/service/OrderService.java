@@ -95,7 +95,6 @@ public class OrderService {
             return true;
         });
 
-        // Rollback capacity if undeliverable
         if (!isDeliverable) {
             throw new UndeliverableOrderException("Order cannot be delivered due" +
                     " to unavailable items or capacity issues.");
