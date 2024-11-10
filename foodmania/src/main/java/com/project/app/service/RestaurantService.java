@@ -6,6 +6,7 @@ import com.project.app.model.MenuItem;
 import com.project.app.model.Restaurant;
 import com.project.app.repository.MenuItemRepository;
 import com.project.app.repository.RestaurantRepository;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,19 +30,16 @@ public class RestaurantService {
      * @param restaurantDto has restaurant data and menu items
      * @return saved restaurant and menu items
      */
-    public ResponseEntity<GenericApiResponseDto> registerRestaurant(RestaurantInputDto restaurantDto) {
+    public ResponseEntity<RestaurantInputDto> registerRestaurant(RestaurantInputDto restaurantDto) throws BadRequestException {
         //validate restaurant
         if(isValidRestaurantData(restaurantDto)) {
             Restaurant restaurant = buildRestaurantData(restaurantDto);
             Restaurant savedRestaurant = restaurantRepository.save(restaurant);
             menuItemService.addMenuItem(savedRestaurant.getId(), restaurantDto.getMenuItems());
             restaurantDto.setId(savedRestaurant.getId());
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new GenericApiResponseDto(HttpStatus.CREATED, restaurantDto.toString()));
+            return ResponseEntity.status(HttpStatus.OK).body(restaurantDto);
         } else {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new GenericApiResponseDto(HttpStatus.BAD_REQUEST,
-                            "Restaurant with this name is already registered."));
+            throw new BadRequestException("Restaurant is already registered.");
         }
     }
 
@@ -76,12 +74,10 @@ public class RestaurantService {
      * @param restaurantDto has restaurant data and menu items
      * @return updated restaurant data
      */
-    public ResponseEntity<GenericApiResponseDto> updateMenu(RestaurantInputDto restaurantDto) {
+    public ResponseEntity<RestaurantInputDto> updateMenu(RestaurantInputDto restaurantDto) throws BadRequestException {
         Optional<Restaurant> restaurant = restaurantRepository.findById(restaurantDto.getId());
         if (restaurant.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new GenericApiResponseDto(HttpStatus.BAD_REQUEST,
-                            "Restaurant is not registered."));
+            throw new BadRequestException("No restaurant is registered with name " + restaurantDto.getName() + ".");
         }
         Restaurant updatedRestaurantData = buildRestaurantData(restaurantDto);
         updatedRestaurantData.setId(restaurant.get().getId());
@@ -93,8 +89,7 @@ public class RestaurantService {
         restaurantDto.setId(savedRestaurant.getId());
         restaurantDto.setMenuItems(savedMenuItem);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new GenericApiResponseDto(HttpStatus.CREATED, restaurantDto.toString()));
+        return ResponseEntity.status(HttpStatus.OK).body(restaurantDto);
     }
 
 }

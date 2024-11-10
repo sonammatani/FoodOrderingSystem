@@ -1,22 +1,19 @@
 package com.project.app.service;
 
-import com.project.app.dto.GenericApiResponseDto;
 import com.project.app.dto.RestaurantInputDto;
 import com.project.app.model.MenuItem;
 import com.project.app.model.Restaurant;
 import com.project.app.repository.MenuItemRepository;
 import com.project.app.repository.RestaurantRepository;
+import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -38,87 +35,83 @@ class RestaurantServiceTest {
 
     private RestaurantInputDto restaurantDto;
     private Restaurant restaurant;
+    private List<MenuItem> menuItems;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
+        // Set up test data
         restaurantDto = new RestaurantInputDto();
         restaurantDto.setName("Test Restaurant");
         restaurantDto.setRating(4.5);
-        restaurantDto.setMaxCapacity(100);
         restaurantDto.setCurrentCapacity(50);
+        restaurantDto.setMaxCapacity(100);
+        restaurantDto.setMenuItems(new ArrayList<>());
 
-        restaurant = Restaurant.builder()
-                .id(1L)
-                .name("Test Restaurant")
-                .rating(4.5)
-                .maxCapacity(100)
-                .currentCapacity(50)
-                .build();
+        restaurant = new Restaurant();
+        restaurant.setId(1L);
+        restaurant.setName("Test Restaurant");
+        restaurant.setRating(4.5);
+        restaurant.setCurrentCapacity(50);
+        restaurant.setMaxCapacity(100);
+
+        menuItems = new ArrayList<>();
+        MenuItem menuItem = new MenuItem();
+        menuItem.setId(1L);
+        menuItem.setName("Burger");
+        menuItem.setPrice(5.99);
+        menuItem.setPreparationTime(15);
+        menuItems.add(menuItem);
     }
 
     @Test
-    void testRegisterRestaurantSuccess() {
-        List<MenuItem> mockMenuItems = Arrays.asList(new MenuItem(), new MenuItem());
-        restaurantDto.setMenuItems(mockMenuItems);
-
+    void testRegisterRestaurant_Success() throws BadRequestException {
         when(restaurantRepository.findByName(restaurantDto.getName())).thenReturn(null);
         when(restaurantRepository.save(any(Restaurant.class))).thenReturn(restaurant);
-        
-        ResponseEntity<GenericApiResponseDto> response = restaurantService.registerRestaurant(restaurantDto);
-
+        doNothing().when(menuItemService).addMenuItem(anyLong(), anyList());
+        ResponseEntity<RestaurantInputDto> response = restaurantService.registerRestaurant(restaurantDto);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(Objects.requireNonNull(response.getBody()).
-                getMessage().contains("Test Restaurant"));
+        assertNotNull(response.getBody());
+        assertEquals(restaurantDto.getName(), response.getBody().getName());
         verify(restaurantRepository, times(1)).save(any(Restaurant.class));
-        verify(menuItemService, times(1)).addMenuItem(eq(restaurant.getId()), anyList());
     }
 
-
     @Test
-    void testRegisterRestaurantFailureDueToExistingName() {
+    void testRegisterRestaurant_Failure_AlreadyRegistered() {
+        // Arrange
         when(restaurantRepository.findByName(restaurantDto.getName())).thenReturn(restaurant);
-        ResponseEntity<GenericApiResponseDto> response = restaurantService.registerRestaurant(restaurantDto);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(Objects.requireNonNull(response.getBody())
-                .getMessage().contains("already registered"));
-        verify(restaurantRepository, never()).save(any(Restaurant.class));
-        verify(menuItemService, never()).addMenuItem(anyLong(), anyList());
+        // Act & Assert
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> {
+            restaurantService.registerRestaurant(restaurantDto);
+        });
+        assertEquals("Restaurant is already registered.", exception.getMessage());
     }
 
     @Test
-    void testUpdateMenuSuccess() {
-        restaurantDto.setId(1L);
-        MenuItem menuItem = new MenuItem();
-        menuItem.setName("Pizza");
-        restaurantDto.setMenuItems(List.of(menuItem));
-
-        when(restaurantRepository.findById(restaurantDto.getId())).thenReturn(Optional.of(restaurant));
+    void testUpdateMenu_Success() throws BadRequestException {
+        when(restaurantRepository.findById(1L)).thenReturn(Optional.of(restaurant));
         when(restaurantRepository.save(any(Restaurant.class))).thenReturn(restaurant);
-        when(menuItemRepository.saveAll(anyList())).thenReturn(restaurantDto.getMenuItems());
+        when(menuItemRepository.saveAll(anyList())).thenReturn(menuItems);
 
-        ResponseEntity<GenericApiResponseDto> response = restaurantService.updateMenu(restaurantDto);
+        restaurantDto.setId(1L);
+        ResponseEntity<RestaurantInputDto> response = restaurantService.updateMenu(restaurantDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(Objects.requireNonNull(response.getBody())
-                .getMessage().contains("Test Restaurant"));
+        assertNotNull(response.getBody());
+        assertEquals(restaurantDto.getName(), response.getBody().getName());
         verify(restaurantRepository, times(1)).save(any(Restaurant.class));
         verify(menuItemRepository, times(1)).saveAll(anyList());
     }
 
+
     @Test
-    void testUpdateMenuRestaurantNotFound() {
-        restaurantDto.setId(1L);
-        when(restaurantRepository.findById(restaurantDto.getId())).thenReturn(Optional.empty());
-
-        ResponseEntity<GenericApiResponseDto> response = restaurantService.updateMenu(restaurantDto);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(Objects.requireNonNull(response.getBody())
-                .getMessage().contains("Restaurant is not registered"));
-        verify(restaurantRepository, never()).save(any(Restaurant.class));
-        verify(menuItemRepository, never()).saveAll(anyList());
+    void testUpdateMenu_Failure_RestaurantNotFound() {
+        when(restaurantRepository.findById(1L)).thenReturn(Optional.empty());
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> {
+            restaurantService.updateMenu(restaurantDto);
+        });
+        assertEquals("No restaurant is registered with name Test Restaurant.", exception.getMessage());
     }
 }

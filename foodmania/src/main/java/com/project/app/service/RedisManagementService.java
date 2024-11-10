@@ -4,6 +4,7 @@ import com.project.app.model.Config;
 import com.project.app.repository.ConfigRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,9 @@ public class RedisManagementService {
 
     @Autowired
     private RedisCacheService cacheService;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     public String getValue(String key) {
         // First check in the cache
@@ -39,6 +43,13 @@ public class RedisManagementService {
         Optional<Config> keyValue = configRepository.findByKey(key);
         keyValue.ifPresent(kv -> cacheService.putInCache(key, kv.getValue()));
     }
+
+    public void refreshAllCache() {
+        cacheManager.getCacheNames().forEach(cacheName -> {
+            cacheManager.getCache(cacheName).clear();
+        });
+    }
+
 
     @Transactional
     public void updateValue(String key, String value) {

@@ -21,5 +21,9 @@ public class RedisCacheService {
     public void evictFromCache(String key) {
         redisTemplate.delete(key);
     }
+
+    public void evictAllFromCache() {
+        redisTemplate.getConnectionFactory().getConnection().flushDb();
+    }
 }
 

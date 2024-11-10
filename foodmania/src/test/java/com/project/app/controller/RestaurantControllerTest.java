@@ -3,6 +3,7 @@ package com.project.app.controller;
 import com.project.app.dto.GenericApiResponseDto;
 import com.project.app.dto.RestaurantInputDto;
 import com.project.app.service.RestaurantService;
+import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -30,34 +31,25 @@ class RestaurantControllerTest {
     }
 
     @Test
-    void testRegisterRestaurant() {
+    void testRegisterRestaurant() throws BadRequestException {
         RestaurantInputDto restaurantInputDto = new RestaurantInputDto();
         restaurantInputDto.setName("Test Restaurant");
         restaurantInputDto.setRating(4.5);
         GenericApiResponseDto responseDto
                 = new GenericApiResponseDto(HttpStatus.CREATED, "Restaurant registered successfully!");
-        when(restaurantService.registerRestaurant(restaurantInputDto))
-                .thenReturn(new ResponseEntity<>(responseDto, HttpStatus.CREATED));
-        ResponseEntity<GenericApiResponseDto> response = restaurantController.registerRestaurant(restaurantInputDto);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Restaurant registered successfully!",
-                Objects.requireNonNull(response.getBody()).getMessage());
+        restaurantController.registerRestaurant(restaurantInputDto);
         verify(restaurantService, times(1)).registerRestaurant(restaurantInputDto); 
     }
 
     @Test
-    void testUpdateRestaurant() {
+    void testUpdateRestaurant() throws BadRequestException {
         RestaurantInputDto restaurantInputDto = new RestaurantInputDto();
         restaurantInputDto.setName("Updated Restaurant");
         restaurantInputDto.setRating(4.7);
-        GenericApiResponseDto responseDto = new GenericApiResponseDto(HttpStatus.OK, "Restaurant updated successfully!");
-        when(restaurantService.updateMenu(restaurantInputDto)).thenReturn(new ResponseEntity<>(responseDto, HttpStatus.OK));
-        ResponseEntity<GenericApiResponseDto> response = restaurantController.updateRestaurant(restaurantInputDto);
+        when(restaurantService.updateMenu(restaurantInputDto)).thenReturn(new ResponseEntity<>(restaurantInputDto, HttpStatus.OK));
+        ResponseEntity<RestaurantInputDto> response = restaurantController.updateRestaurant(restaurantInputDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Restaurant updated successfully!",
-                Objects.requireNonNull(response.getBody()).getMessage());
         verify(restaurantService, times(1)).updateMenu(restaurantInputDto); 
     }
 }

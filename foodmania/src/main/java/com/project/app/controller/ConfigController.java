@@ -39,5 +39,11 @@ public class ConfigController {
     public void deleteKey(@PathVariable String key) {
         redisManagementService.deleteCacheByKey(key);
     }
+
+    @DeleteMapping("/clear")
+    public String clearAllCache() {
+        redisManagementService.refreshAllCache();
+        return "All cache cleared successfully";
+    }
 }
 

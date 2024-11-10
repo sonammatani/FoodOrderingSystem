@@ -6,10 +6,7 @@ import com.project.app.exception.UndeliverableOrderException;
 import com.project.app.factory.RestaurantSelectionStrategyFactory;
 import com.project.app.javainterface.RestaurantSelectionStrategy;
 import com.project.app.model.*;
-import com.project.app.repository.ConfigRepository;
-import com.project.app.repository.MenuItemRepository;
-import com.project.app.repository.OrderRepository;
-import com.project.app.repository.RestaurantRepository;
+import com.project.app.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +37,9 @@ public class OrderService {
     private ConfigRepository configRepository;
 
     @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
     private RestaurantSelectionStrategyFactory restaurantSelectionStrategyFactory;
 
     @Value("${order.selection.strategy}")
@@ -55,7 +55,7 @@ public class OrderService {
      * @throws UndeliverableOrderException if any item is undeliverable
      */
     @Transactional(rollbackFor = {UndeliverableOrderException.class, RuntimeException.class})
-    public ResponseEntity<GenericApiResponseDto> placeOrder(List<OrderItem> items) throws UndeliverableOrderException {
+    public ResponseEntity<List<OrderItem>> placeOrder(List<OrderItem> items) throws UndeliverableOrderException {
         OrderData order = orderRepository.save(new OrderData());
         Long orderId = order.getId();
         List<OrderItem> orderItems = new ArrayList<>();
@@ -101,9 +101,8 @@ public class OrderService {
         }
 
         order.setDeliverable(isDeliverable);
-        order = orderRepository.save(order);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new GenericApiResponseDto(HttpStatus.CREATED, order.toString()));
+        orderRepository.save(order);
+        return ResponseEntity.status(HttpStatus.OK).body(orderItems);
     }
 
     private String getSelectedStrategy(String strategy) {
@@ -118,9 +117,10 @@ public class OrderService {
     }
 
     @Async
-    public void prepareAndDispatchItem(List<OrderItem> orderItem, Restaurant restaurant) {
+    public void prepareAndDispatchItem(List<OrderItem> orderItems, Restaurant restaurant) {
         try {
-            for (OrderItem order : orderItem) {
+            orderItems = orderItemRepository.saveAll(orderItems);
+            for (OrderItem order : orderItems) {
                 MenuItem menuItem = menuItemRepository
                         .findByRestaurantIdAndName(restaurant.getId(), order.getItemName());
                 int preparationTime = order.getQuantity() * menuItem.getPreparationTime();

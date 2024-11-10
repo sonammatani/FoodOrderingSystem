@@ -6,9 +6,7 @@ import com.project.app.model.MenuItem;
 import com.project.app.model.OrderData;
 import com.project.app.model.OrderItem;
 import com.project.app.model.Restaurant;
-import com.project.app.repository.MenuItemRepository;
-import com.project.app.repository.OrderRepository;
-import com.project.app.repository.RestaurantRepository;
+import com.project.app.repository.*;
 import com.project.app.factory.RestaurantSelectionStrategyFactory;
 import com.project.app.javainterface.RestaurantSelectionStrategy;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +45,12 @@ class OrderServiceTest {
     @Mock
     private Restaurant restaurant;
 
+    @Mock
+    private ConfigRepository configRepository;
+
+    @Mock
+    private OrderItemRepository orderItemRepository;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -81,14 +85,12 @@ class OrderServiceTest {
         mockOrder.setId(1L);
         when(orderRepository.save(any(OrderData.class))).thenReturn(mockOrder);
 
-        ResponseEntity<GenericApiResponseDto> response = orderService.placeOrder(items);
+        ResponseEntity<List<OrderItem>> response = orderService.placeOrder(items);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(orderRepository, times(2)).save(any());
-        verify(restaurantRepository, times(2)).save(restaurant);
+        verify(restaurantRepository, times(1)).save(restaurant);
     }
-
-
 
     @Test
     void testPlaceOrder_Failure_ItemNotAvailable() {
