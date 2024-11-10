@@ -1,19 +1,15 @@
-package com.project.model;
+package com.project.app.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.List;
-
-@Entity
 @Data
-public class Order {
+@Entity
+public class OrderData extends BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems;
-
+    @Column(name = "deliverable")
     private boolean isDeliverable;
 }

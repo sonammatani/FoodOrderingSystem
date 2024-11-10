@@ -1,18 +1,18 @@
-package com.project.model;
+package com.project.app.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class OrderItem {
+@Entity
+public class Config extends BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String itemName;
-    private int quantity;
+    private String key;
+    private String value;
+    @Column(name = "is_active")
+    private boolean isActive;
 }
