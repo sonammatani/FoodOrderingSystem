@@ -69,6 +69,14 @@ Build and run as spring boot application
 API Endpoints :
 After the application is up , open http://localhost:8080/swagger-ui/index.html to view all endpoints
 
+Monitoring :
+
+Prometheus
+Accessible at localhost:9090 in browser
+To see the count of each request use this expresion in panel : http_server_requests_seconds_count
+To get rate of each api call : rate(http_server_requests_seconds_count[30m])
+To check memory usage across instances : jvm_memory_committed_bytes
+
 
 
 
